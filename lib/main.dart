@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -11,8 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'dart:ui' as ui;
-import 'package:flutter_native_image/flutter_native_image.dart';
-import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
 
 void main() => runApp(MyApp());
 
@@ -42,23 +42,15 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
-  String _selectedCategory;
+  String _selectedDropdownOne;
+  String _selectedDropdownTwo;
+  String _selectedDropdownThree;
 
-  bool checkBox1;
-  String checkBox1Value;
-  bool checkBox2;
-  String checkBox2Value;
-  bool checkBox3;
-  String checkBox3Value;
+  List<bool> slider = [];
+  List<String> sliderValue = [];
 
-  bool slider1;
-  String slider1Value;
-  bool slider2;
-  String slider2Value;
-  bool slider3;
-  String slider3Value;
-  bool slider4;
-  String slider4Value;
+  List<bool> checkBox = [];
+  List<String> checkBoxValue = [];
 
   String addedText;
   String presetName;
@@ -70,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   GlobalKey globalKey = new GlobalKey();
 
-  List<String> categories = [
+  List<String> dropDownOneList = [
 
     "Dropdown 1",
     "Dropdown 2",
@@ -78,25 +70,37 @@ class _MyHomePageState extends State<MyHomePage> {
 
   ];
 
+  List<String> dropDownTwoList = [
+
+    "Dropdown 1",
+    "Dropdown 2",
+    "Dropdown 3"
+
+  ];
+
+  List<String> dropDownThreeList = [
+
+    "Dropdown 1",
+    "Dropdown 2",
+    "Dropdown 3"
+
+  ];
+
+
+  Timer _timer;
+  String _timeString;
+
   @override
   void initState() {
-    _selectedCategory = "Dropdown 1";
-    checkBox1 = false;
-    checkBox1Value = "";
-    checkBox2 = false;
-    checkBox2Value = "";
-    checkBox3 = false;
-    checkBox3Value = "";
+    _selectedDropdownOne = "Dropdown 1";
+    _selectedDropdownTwo = "Dropdown 1";
+    _selectedDropdownThree = "Dropdown 1";
 
+    slider = [false, false, false, false];
+    sliderValue = ["", "", "", ""];
 
-    slider1 = false;
-    slider1Value = "";
-    slider2 = false;
-    slider2Value = "";
-    slider3 = false;
-    slider3Value = "";
-    slider4 = false;
-    slider4Value = "";
+    checkBox = [false, false, false, false, false, false];
+    checkBoxValue = ["", "", "", "", "", ""];
 
     addedText = "";
     presetName = "";
@@ -104,118 +108,36 @@ class _MyHomePageState extends State<MyHomePage> {
     presetController.text = "";
     addedTextController.text = "";
 
+    _timeString = _formatDateTime(DateTime.now());
+    _timer = Timer.periodic(Duration(seconds: 1), (Timer t) => _getTime());
+
     super.initState();
   }
-
-  Widget checkBoxOne()
-  {
-    return new Container(
-      padding: EdgeInsets.only(
-          top: 10,
-          left: 20
-      ),
-      child: new Row(
-        children: <Widget>[
-          SizedBox(
-            height: 24.0,
-            width: 24.0,
-            child: Checkbox(
-              value: checkBox1,
-              onChanged: (bool value) {
-                setState(() {
-                  checkBox1 = value;
-                  if(value)
-                  {
-                    checkBox1Value= "Checkbox1";
-                  }
-                  else {
-                    checkBox1Value= "";
-                  }
-                });
-              },
-            ),
-          ),
-
-
-        ],
-      ),
-    );
+  
+  @override
+  void dispose() {
+    if(_timer != null){
+      _timer.cancel();
+    }
+    super.dispose();
   }
 
-  Widget checkBoxTwo()
-  {
-    return new Container(
-      padding: EdgeInsets.only(
-          top: 10,
-          left: 20
-      ),
-      child: new Row(
-        children: <Widget>[
-          SizedBox(
-            height: 24.0,
-            width: 24.0,
-            child: Checkbox(
-              value: checkBox2,
-              onChanged: (bool value) {
-                setState(() {
-                  checkBox2 = value;
-                  if(value)
-                  {
-                    checkBox2Value= "Checkbox2";
-                  }
-                  else {
-                    checkBox2Value= "";
-                  }
-                });
-              },
-            ),
-          ),
-
-
-        ],
-      ),
-    );
+  void _getTime() {
+    final DateTime now = DateTime.now();
+    final String formattedDateTime = _formatDateTime(now);
+    setState(() {
+      _timeString = formattedDateTime;
+    });
   }
 
-  Widget checkBoxThree()
-  {
-    return new Container(
-      padding: EdgeInsets.only(
-          top: 10,
-          left: 20
-      ),
-      child: new Row(
-        children: <Widget>[
-          SizedBox(
-            height: 24.0,
-            width: 24.0,
-            child: Checkbox(
-              value: checkBox3,
-              onChanged: (bool value) {
-                setState(() {
-                  checkBox3 = value;
-                  if(value)
-                  {
-                    checkBox3Value= "Checkbox3";
-                  }
-                  else {
-                    checkBox3Value= "";
-                  }
-                });
-              },
-            ),
-          ),
-
-
-        ],
-      ),
-    );
+  String _formatDateTime(DateTime dateTime) {
+    return DateFormat('HH:mm:ss').format(dateTime);
   }
 
   Widget dropDown()
   {
     return new Container(
-      padding: EdgeInsets.only(bottom: 10, top: 20),
+      padding: EdgeInsets.only(bottom: 0, top: 20),
       child: new Container(
           decoration: new BoxDecoration(
             shape: BoxShape.rectangle,
@@ -229,13 +151,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
             child: DropdownButton<String>(
               hint:  Text("Select item"),
-              value: _selectedCategory,
+              value: _selectedDropdownOne,
               onChanged: (String Value) {
                 setState(() {
-                  _selectedCategory = Value;
+                  _selectedDropdownOne = Value;
                 });
               },
-              items: categories.map((String category) {
+              items: dropDownOneList.map((String category) {
                 return  DropdownMenuItem<String>(
                     value: category,
                     child: new Container(
@@ -253,138 +175,207 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget switchSliderOne()
+  Widget dropDownTwo()
   {
     return new Container(
-      padding: EdgeInsets.only(
-          top: 10,
-          left: 20
-      ),
-      child: new Row(
-        children: <Widget>[
-          Switch(
-            activeColor: Colors.blueGrey,
-            value: slider1,
-            onChanged: (value) {
-              print("VALUE : $value");
-              setState(() {
-                slider1 = value;
-                if(value)
-                  {
-                    slider1Value = "Slider1";
-                  }
-                else {
-                  slider1Value = "";
-                }
-              });
-            },
-
+      padding: EdgeInsets.only(bottom: 0, top: 10),
+      child: new Container(
+          decoration: new BoxDecoration(
+            shape: BoxShape.rectangle,
+            border: new Border.all(
+              color: Colors.grey,
+              width: 1.0,
+            ),
           ),
+          child: new Container(
+            padding: EdgeInsets.only(left: 5, right: 5),
 
-
-        ],
+            child: DropdownButton<String>(
+              hint:  Text("Select item"),
+              value: _selectedDropdownTwo,
+              onChanged: (String Value) {
+                setState(() {
+                  _selectedDropdownTwo = Value;
+                });
+              },
+              items: dropDownTwoList.map((String category) {
+                return  DropdownMenuItem<String>(
+                    value: category,
+                    child: new Container(
+                      width: MediaQuery.of(context).size.width - 76,
+                      child: Text(
+                        category,
+                        style:  TextStyle(color: Colors.black),
+                      ),
+                    )
+                );
+              }).toList(),
+            ),
+          )
       ),
     );
   }
 
-  Widget switchSliderTwo()
+  Widget dropDownThree()
   {
     return new Container(
-      padding: EdgeInsets.only(
-          top: 0,
-          left: 20
-      ),
-      child: new Row(
-        children: <Widget>[
-          Switch(
-            activeColor: Colors.blueGrey,
-            value: slider2,
-            onChanged: (value) {
-              print("VALUE : $value");
-              setState(() {
-                slider2 = value;
-                if(value)
-                {
-                  slider2Value = "Slider2";
-                }
-                else {
-                  slider2Value = "";
-                }
-              });
-            },
+      padding: EdgeInsets.only(bottom: 0, top: 10),
+      child: new Container(
+          decoration: new BoxDecoration(
+            shape: BoxShape.rectangle,
+            border: new Border.all(
+              color: Colors.grey,
+              width: 1.0,
+            ),
           ),
+          child: new Container(
+            padding: EdgeInsets.only(left: 5, right: 5),
 
-
-        ],
+            child: DropdownButton<String>(
+              hint:  Text("Select item"),
+              value: _selectedDropdownThree,
+              onChanged: (String Value) {
+                setState(() {
+                  _selectedDropdownThree = Value;
+                });
+              },
+              items: dropDownThreeList.map((String category) {
+                return  DropdownMenuItem<String>(
+                    value: category,
+                    child: new Container(
+                      width: MediaQuery.of(context).size.width - 76,
+                      child: Text(
+                        category,
+                        style:  TextStyle(color: Colors.black),
+                      ),
+                    )
+                );
+              }).toList(),
+            ),
+          )
       ),
     );
   }
 
-  Widget switchSliderThree()
+  Widget sliderWidget()
   {
-    return new Container(
-      padding: EdgeInsets.only(
-          top: 0,
-          left: 20
-      ),
-      child: new Row(
-        children: <Widget>[
-          Switch(
-            activeColor: Colors.blueGrey,
-            value: slider3,
-            onChanged: (value) {
-              print("VALUE : $value");
-              setState(() {
-                slider3 = value;
-                if(value)
-                {
-                  slider3Value = "Slider3";
-                }
-                else {
-                  slider3Value = "";
-                }
-              });
-            },
+    return new Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children : List<int>.generate(4, (index) => index)
+        .map((item) =>  new Container(
+          padding: EdgeInsets.only(
+              top: 0,
+              left: 20
           ),
-
-
-        ],
-      ),
+          child: new Row(
+            children: <Widget>[
+              Switch(
+                activeColor: Colors.blueGrey,
+                value: slider[item],
+                onChanged: (value) {
+                  print("VALUE : $value");
+                  setState(() {
+                    slider[item] = value;
+                    if(slider[item])
+                    {
+                      sliderValue[item] = "Slider${item+1},";
+                    }
+                    else {
+                      sliderValue[item] = "";
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+        )
+      ).toList(),
     );
   }
 
-  Widget switchSliderFour()
+  Widget checkBoxWidget()
   {
-    return new Container(
-      padding: EdgeInsets.only(
-          top: 0,
-          left: 20
-      ),
-      child: new Row(
-        children: <Widget>[
-          Switch(
-            activeColor: Colors.blueGrey,
-            value: slider4,
-            onChanged: (value) {
-              print("VALUE : $value");
-              setState(() {
-                slider4 = value;
-                if(value)
-                {
-                  slider4Value = "Slider4";
-                }
-                else {
-                  slider4Value = "";
-                }
-              });
-            },
-          ),
+    return new Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children : List<int>.generate(4, (index) => index)
+          .map((item) =>  new Container(
+        padding: EdgeInsets.only(
+            top: 10,
+            left: 20
+        ),
+        child: new Row(
+          children: <Widget>[
+            SizedBox(
+              height: 24.0,
+              width: 24.0,
+              child: Checkbox(
+                value: checkBox[item],
+                onChanged: (bool value) {
+                  setState(() {
+                    checkBox[item] = value;
+                    if(value)
+                    {
+                      checkBoxValue[item] = "Checkbox${item+1},";
+                    }
+                    else {
+                      checkBoxValue[item] = "";
+                    }
+                  });
+                },
+              ),
+            ),
 
 
-        ],
-      ),
+          ],
+        ),
+      )
+      ).toList(),
     );
   }
+
+  Widget checkBoxWidgetTwo()
+  {
+    return new Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children : List<int>.generate(2, (index) => index)
+          .map((item) =>  new Container(
+        padding: EdgeInsets.only(
+            top: 10,
+            left: 20
+        ),
+        child: new Row(
+          children: <Widget>[
+            SizedBox(
+              height: 24.0,
+              width: 24.0,
+              child: Checkbox(
+                value: checkBox[item+4],
+                onChanged: (bool value) {
+                  setState(() {
+                    checkBox[item+4] = value;
+                    if(value)
+                    {
+                      checkBoxValue[item+4] = "Checkbox${item+4},";
+                    }
+                    else {
+                      checkBoxValue[item+4] = "";
+                    }
+                  });
+                },
+              ),
+            ),
+
+
+          ],
+        ),
+      )
+      ).toList(),
+    );
+  }
+
 
   Widget widgetBankOne()
   {
@@ -393,17 +384,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
         Expanded(
           flex: 6,
-          child: new Container(
-            child: new Column(
-              children: <Widget>[
-                switchSliderOne(),
-                switchSliderTwo(),
-                switchSliderThree(),
-                switchSliderFour(),
-              ],
-            ),
-          ),
+          child: sliderWidget(),
         ),
+
 
         Expanded(
           flex: 3,
@@ -411,108 +394,28 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
 
 
+      ],
+    );
+  }
 
-//          Padding(
-//              padding: const EdgeInsets.only(
-//                  top: 10,
-//                  left: 40,
-//                  right: 40,
-//                  bottom: 10
-//              ),
-//              child: GestureDetector(
-//                onTap: (){
-//                  setState(() {
-//                    presetName = presetController.text;
-//                    addedText = addedTextController.text;
-//                  });
-//                  //dbStart();
-//                  //Navigator.of(context).pushAndRemoveUntil(_createRouteToHome(app), (Route<dynamic> route) => false);
-//                },
-//                child: new Container(
-//                  alignment: Alignment.center,
-//                  height: 50,
-//                  //width: 150,
-//                  decoration: BoxDecoration(
-//                    borderRadius: BorderRadius.all(Radius.circular(10.0)),
-//                    color: Color.fromRGBO(208, 216, 220, 1.0),
-//                  ),
-//                  child: Text('GENERATE', style: TextStyle(
-//                      fontSize: 14,
-//                      fontWeight: FontWeight.bold,
-//                      color: Color.fromRGBO(123, 141, 147, 1.0)
-//                  ),),
-//                ),
-//              )
-//          ),
+  Widget widgetBankTwo()
+  {
+    return Column(
+      children: <Widget>[
 
-      Expanded(
-        flex: 7,
-        child: Column(
-          children: <Widget>[
-            RepaintBoundary(
-              key: globalKey,
-              child: Container(
-                color: Colors.white,
-                child:  Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    QrImage(
-                      data: "10:23:24,$slider1Value,$slider2Value,$slider3Value,$slider4Value,$addedText",
-                      version: QrVersions.auto,
-                      size: 150.0,
-                    ),
+        dropDown(),
 
-                    new Container(
-                      child: new Text("$presetName", style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold
-                      ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
+        dropDownTwo(),
 
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                  padding: const EdgeInsets.only(
-                      top: 10,
-                      left: 20,
-                      right: 20,
-                      bottom: 10
-                  ),
-                  child: GestureDetector(
-                    onTap: (){
-                      _saveScreen();
-                      //_getHttp();
-                      //_captureAndSharePng();
-                      //dbStart();
-                      //Navigator.of(context).pushAndRemoveUntil(_createRouteToHome(app), (Route<dynamic> route) => false);
-                    },
-                    child: new Container(
-                      alignment: Alignment.center,
-                      height: 40,
-                      width: 100,
-                      //width: 150,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        color: Color.fromRGBO(208, 216, 220, 1.0),
-                      ),
-                      child: Text('SAVE IMAGE', style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromRGBO(123, 141, 147, 1.0)
-                      ),),
-                    ),
-                  )
-              ),
-
-            )
-          ],
+        Expanded(
+          flex: 2,
+          child: checkBoxWidgetTwo(),
         ),
-      )
+
+        Expanded(
+          flex: 3,
+          child: textFields(),
+        ),
 
       ],
     );
@@ -523,16 +426,18 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       children: <Widget>[
 
-        dropDown(),
-        checkBoxOne(),
-        checkBoxTwo(),
-        checkBoxThree(),
+        dropDownThree(),
 
-        QrImage(
-          data: "10:23:24,$_selectedCategory,$checkBox1Value,$checkBox2Value,$checkBox3Value,$slider1Value,$slider2Value,$slider3Value,$slider4Value",
-          version: QrVersions.auto,
-          size: 200.0,
+        Expanded(
+          flex: 4,
+          child: checkBoxWidget(),
         ),
+
+        Expanded(
+          flex: 3,
+          child: textFields(),
+        ),
+
       ],
     );
   }
@@ -541,15 +446,6 @@ class _MyHomePageState extends State<MyHomePage> {
   {
     return Column(
       children: <Widget>[
-//        new Container(
-//          alignment: Alignment.centerLeft,
-//          padding: EdgeInsets.only(bottom: 10, top: 5, left: 20, right: 20),
-//          child: new Text('Added Text', style: TextStyle(
-//              fontSize: 14,
-//              color: Colors.blue,
-//              fontWeight: FontWeight.bold
-//          ),),
-//        ),
         new Container(
           padding: EdgeInsets.only(bottom: 10,left: 20, right: 20),
           child: new Container(
@@ -564,13 +460,17 @@ class _MyHomePageState extends State<MyHomePage> {
               child: new Container(
                 padding: EdgeInsets.only(left: 5, right: 5),
                 child: new TextField(
+                  onChanged: (text) {
+                    print("Added text field: $text");
+                    setState(() {
+                      addedText = text;
+                    });
+                  },
                   style: TextStyle(
                     fontSize: 12
                   ),
                   controller: addedTextController,
                   textAlign: TextAlign.start,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
                   decoration: new InputDecoration(
                     hintText: 'Added Text',
                     border: InputBorder.none,
@@ -580,15 +480,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
 
-//        new Container(
-//          alignment: Alignment.centerLeft,
-//          padding: EdgeInsets.only(bottom: 10, top: 5, left: 20, right: 20),
-//          child: new Text('Preset Name', style: TextStyle(
-//              fontSize: 14,
-//              color: Colors.blue,
-//              fontWeight: FontWeight.bold
-//          ),),
-//        ),
         new Container(
           padding: EdgeInsets.only(bottom: 0,left: 20, right: 20),
           child: new Container(
@@ -603,13 +494,17 @@ class _MyHomePageState extends State<MyHomePage> {
               child: new Container(
                 padding: EdgeInsets.only(left: 5, right: 5),
                 child: new TextField(
+                  onChanged: (text) {
+                    print("First text field: $text");
+                    setState(() {
+                      presetName = text;
+                    });
+                  },
                   style: TextStyle(
                       fontSize: 12
                   ),
                   controller: presetController,
                   textAlign: TextAlign.start,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
                   decoration: new InputDecoration(
                     hintText: 'Preset Name',
                     border: InputBorder.none,
@@ -622,13 +517,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  _getHttp() async {
-    var response = await Dio().get("https://ss0.baidu.com/94o3dSag_xI4khGko9WTAnF6hhy/image/h%3D300/sign=a62e824376d98d1069d40a31113eb807/838ba61ea8d3fd1fc9c7b6853a4e251f94ca5f46.jpg", options: Options(responseType: ResponseType.bytes));
-    final result = await ImageGallerySaver.saveImage(Uint8List.fromList(response.data));
-    print(result);
-  }
-
-  _saveScreen() async {
+  _saveScreen(GlobalKey globalKey) async {
     RenderRepaintBoundary boundary = globalKey.currentContext.findRenderObject();
     ui.Image image = await boundary.toImage(pixelRatio: 10.0);
 
@@ -640,66 +529,179 @@ class _MyHomePageState extends State<MyHomePage> {
     print(result);
   }
 
-  Future<void> _captureAndSharePng() async {
+  Future<void> _captureAndSharePng(GlobalKey globalKey) async {
     try {
       RenderRepaintBoundary boundary = globalKey.currentContext.findRenderObject();
       var image = await boundary.toImage(pixelRatio: ui.window.devicePixelRatio);
       ByteData byteData = await image.toByteData(format: ImageByteFormat.png);
       Uint8List pngBytes = byteData.buffer.asUint8List();
 
-      final tempDir = await getTemporaryDirectory();
-      final file = await new File('${tempDir.path}/image1.png').create();
-      await file.writeAsBytes(pngBytes);
+      String imgName = "$presetName" + "_$_timeString";
 
-      File compressedFile = await FlutterNativeImage.compressImage(file.path, quality: 10,
-          targetWidth: 600, targetHeight: 600);
+      final tempDir = await getTemporaryDirectory();
+      final file = await new File('${tempDir.path}/$imgName.png').create();
+      await file.writeAsBytes(pngBytes);
 
       GallerySaver.saveImage(file.path).then((data){
         SnackBar(content: Text('Image saved successfully!'));
         scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Image saved successfully!')));
       });
 
-
-//      Directory tempAppDir = await getApplicationDocumentsDirectory();
-//      String path = tempAppDir.path;
-//      final File newImage = await file.copy('$path/image1.png');
-//      final myImagePath = '$path/QRImages';
-//
-//      var img = Image.memory(pngBytes);
-
-//      final channel = const MethodChannel('channel:me.alfian.share/share');
-//      channel.invokeMethod('shareFile', 'image.png');
-
     } catch(e) {
       print(e.toString());
     }
   }
 
+  void resetAll()
+  {
+    setState(() {
+      _selectedDropdownOne = "Dropdown 1";
+      _selectedDropdownTwo = "Dropdown 1";
+      _selectedDropdownThree = "Dropdown 1";
+
+      slider = [false, false, false, false];
+      sliderValue = ["", "", "", ""];
+
+      checkBox = [false, false, false, false, false, false];
+      checkBoxValue = ["", "", "", "", "", ""];
+
+      addedText = "";
+      presetName = "";
+
+      presetController.text = "";
+      addedTextController.text = "";
+
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
 
-    return DefaultTabController(
-      length: 3,
+    String qrData = "$_timeString,$_selectedDropdownOne,$_selectedDropdownTwo,$_selectedDropdownThree,${sliderValue[0]}${sliderValue[1]}${sliderValue[2]}${sliderValue[3]}${checkBoxValue[0]}${checkBoxValue[1]}${checkBoxValue[2]}${checkBoxValue[3]}${checkBoxValue[4]}${checkBoxValue[5]}$addedText";
 
-      child: Scaffold(
-        key: scaffoldKey,
-        appBar: AppBar(
-          title: Text(widget.title),
-        ),
-        //bottomNavigationBar: menu(),
-        body: Center(
-          // Center is a layout widget. It takes a single child and positions it
-          // in the middle of the parent.
-            child: TabBarView(
+    return new Scaffold(
+      //appBar: AppBar(),
+      key: scaffoldKey,
+      resizeToAvoidBottomPadding: false,
+      body: new Column(
+        children: <Widget>[
+          Expanded(
+            flex: 5,
+            child: DefaultTabController(
+              length: 3,
+
+              child: Scaffold(
+
+                resizeToAvoidBottomPadding: false,
+
+                appBar: AppBar(
+                  title: Text(widget.title),
+                ),
+                //bottomNavigationBar: menu(),
+                body: Center(
+                    child: TabBarView(
+                      children: <Widget>[
+                        widgetBankOne(),
+                        widgetBankTwo(),
+                        widgetBankThree(),
+                      ],
+                    )
+                ),
+
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Column(
               children: <Widget>[
-                widgetBankOne(),
-                widgetBankThree(),
-                widgetBankThree()
-              ],
-            )
-        ),
+                RepaintBoundary(
+                  key: globalKey,
+                  child: Container(
+                    color: Colors.white,
+                    child:  Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        QrImage(
+                          data: "$qrData",
+                          version: QrVersions.auto,
+                          size: 160.0,
+                        ),
 
+                        new Container(
+                          child: new Text("$presetName", style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold
+                          ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+
+                new Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Padding(
+                        padding: const EdgeInsets.only(
+                            top: 5,
+                            left: 20,
+                            right: 20,
+                            bottom: 10
+                        ),
+                        child: GestureDetector(
+                          onTap: (){
+                            //_saveScreen(globalKey1);
+                            _captureAndSharePng(globalKey);
+                          },
+                          child: new Container(
+                            alignment: Alignment.center,
+                            height: 40,
+                            width: 100,
+                            //width: 150,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                              color: Color.fromRGBO(208, 216, 220, 1.0),
+                            ),
+                            child: Text('SAVE IMAGE', style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color.fromRGBO(123, 141, 147, 1.0)
+                            ),),
+                          ),
+                        )
+                    ),
+                    Padding(
+                        padding: const EdgeInsets.only(
+                            top: 5,
+                            left: 20,
+                            right: 20,
+                            bottom: 10
+                        ),
+                        child: GestureDetector(
+                          onTap: (){
+                            resetAll();
+                          },
+                          child: new Container(
+                            alignment: Alignment.center,
+                            height: 40,
+                            width: 40,
+                            //width: 150,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                              color: Color.fromRGBO(208, 216, 220, 1.0),
+                            ),
+                            child: Icon(Icons.add, color: Color.fromRGBO(123, 141, 147, 1.0),)
+                          ),
+                        )
+                    ),
+                  ],
+                )
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
